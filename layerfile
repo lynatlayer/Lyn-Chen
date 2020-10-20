@@ -1,0 +1,27 @@
+#This is an example LayerCI configuration for React!
+FROM vm/ubuntu:18.04
+
+# To note: Layerfiles create entire VMs, *not* containers!
+
+# Volta is a convenient way to install node and yarn
+RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
+    curl -fSsL https://deb.nodesource.com/setup_12.x | bash && \
+    apt-get install nodejs yarn
+
+# node is a memory hog
+MEMORY 2G
+ENV NODE_OPTIONS=--max-old-space-size=8192
+
+# The COPY directive acts like docker, it copies files
+# from the repository into the CI runner
+COPY package.json ./
+CACHE /usr/local/share/.cache/yarn
+
+RUN yarn install
+COPY . .
+RUN BACKGROUND yarn start
+
+# Create a unique link to share the app in this runner.
+# Every time someone clicks the link, we'll wake up this staging server.
+EXPOSE WEBSITE http://localhost:3000
